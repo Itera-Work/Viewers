@@ -1,21 +1,21 @@
+import { DicomMetadataStore, IWebApiDataSource, classes, errorHandler, utils } from '@ohif/core';
 import { api } from 'dicomweb-client';
-import { DicomMetadataStore, IWebApiDataSource, utils, errorHandler, classes } from '@ohif/core';
 
+import dcm4cheeReject from './dcm4cheeReject';
 import {
   mapParams,
-  search as qidoSearch,
-  seriesInStudy,
   processResults,
   processSeriesResults,
+  search as qidoSearch,
+  seriesInStudy,
 } from './qido.js';
-import dcm4cheeReject from './dcm4cheeReject';
 
-import getImageId from './utils/getImageId';
 import dcmjs from 'dcmjs';
-import { retrieveStudyMetadata, deleteStudyMetadataPromise } from './retrieveStudyMetadata.js';
-import StaticWadoClient from './utils/StaticWadoClient';
 import getDirectURL from '../utils/getDirectURL';
+import { deleteStudyMetadataPromise, retrieveStudyMetadata } from './retrieveStudyMetadata.js';
+import StaticWadoClient from './utils/StaticWadoClient';
 import { fixBulkDataURI } from './utils/fixBulkDataURI';
+import getImageId from './utils/getImageId';
 
 const { DicomMetaDictionary, DicomDict } = dcmjs.data;
 
@@ -82,9 +82,17 @@ function createDicomWebApi(dicomWebConfig, servicesManager) {
       getAuthrorizationHeader = () => {
         const xhrRequestHeaders = {};
         const authHeaders = userAuthenticationService.getAuthorizationHeader();
+        console.log('authHeaders', authHeaders);
+
+        const username = 'fondef10337';
+        const password = 'fondef10337_orthanc';
+        const encodedCredentials = btoa(`${username}:${password}`);
+
         if (authHeaders && authHeaders.Authorization) {
           xhrRequestHeaders.Authorization = authHeaders.Authorization;
         }
+
+        // xhrRequestHeaders.Authorization = `Basic ${encodedCredentials}`;
         return xhrRequestHeaders;
       };
 

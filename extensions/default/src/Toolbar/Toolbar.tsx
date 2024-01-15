@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import classnames from 'classnames';
 import { useViewportGrid } from '@ohif/ui';
+import classnames from 'classnames';
+import React, { useCallback, useEffect, useState } from 'react';
 
 export default function Toolbar({
   servicesManager,

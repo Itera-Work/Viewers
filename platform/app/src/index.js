@@ -1,10 +1,10 @@
 /**
  * Entry point for development and production PWA builds.
  */
-import 'regenerator-runtime/runtime';
-import App from './App';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import 'regenerator-runtime/runtime';
+import App from './App';
 import { history } from './utils/history';
 
 /**
@@ -16,8 +16,8 @@ import { history } from './utils/history';
  * pluginImports.js imports all of the modes and extensions and adds them
  * to the window for processing.
  */
-import { modes as defaultModes, extensions as defaultExtensions } from './pluginImports';
 import loadDynamicConfig from './loadDynamicConfig';
+import { extensions as defaultExtensions, modes as defaultModes } from './pluginImports';
 
 loadDynamicConfig(window.config).then(config_json => {
   // Reset Dynamic config if defined

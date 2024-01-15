@@ -1,57 +1,49 @@
 import { hotkeys } from '@ohif/core';
-import i18n from 'i18next';
 import { id } from './id';
-import toolbarButtons from './toolbarButtons.js';
-
-const configs = {
-  Length: {},
-  //
-};
+import toolbarButtons from './toolbarButtons';
 
 const ohif = {
   layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
   sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
-  measurements: '@ohif/extension-default.panelModule.measure',
-  thumbnailList: '@ohif/extension-default.panelModule.seriesList',
+  hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
+  leftPanel: '@ohif/extension-default.panelModule.seriesList',
+  rightPanel: '@ohif/extension-default.panelModule.measure',
 };
 
-const cs3d = {
+const cornerstone = {
   viewport: '@ohif/extension-cornerstone.viewportModule.cornerstone',
 };
 
-const dicomsr = {
-  sopClassHandler: '@ohif/extension-cornerstone-dicom-sr.sopClassHandlerModule.dicom-sr',
-  viewport: '@ohif/extension-cornerstone-dicom-sr.viewportModule.dicom-sr',
-};
-
-const dicomvideo = {
-  sopClassHandler: '@ohif/extension-dicom-video.sopClassHandlerModule.dicom-video',
-  viewport: '@ohif/extension-dicom-video.viewportModule.dicom-video',
-};
-
-const dicompdf = {
-  sopClassHandler: '@ohif/extension-dicom-pdf.sopClassHandlerModule.dicom-pdf',
-  viewport: '@ohif/extension-dicom-pdf.viewportModule.dicom-pdf',
-};
-
+/**
+ * Just two dependencies to be able to render a viewport with panels in order
+ * to make sure that the mode is working.
+ */
 const extensionDependencies = {
   '@ohif/extension-default': '^3.0.0',
   '@ohif/extension-cornerstone': '^3.0.0',
-  '@ohif/extension-cornerstone-dicom-sr': '^3.0.0',
-  '@ohif/extension-dicom-pdf': '^3.0.1',
-  '@ohif/extension-dicom-video': '^3.0.1',
+  'sam-med': '^0.0.1',
 };
 
 function modeFactory({ modeConfiguration }) {
   return {
-    id,
-    routeName: 'dev',
-    displayName: i18n.t('Modes:Basic Dev Viewer'),
     /**
-     * Lifecycle hooks
+     * Mode ID, which should be unique among modes used by the viewer. This ID
+     * is used to identify the mode in the viewer's state.
+     */
+    id,
+    routeName: 'template',
+    /**
+     * Mode name, which is displayed in the viewer's UI in the workList, for the
+     * user to select the mode.
+     */
+    displayName: 'Segmentation Assistant',
+    /**
+     * Runs when the Mode Route is mounted to the DOM. Usually used to initialize
+     * Services and other resources.
      */
     onModeEnter: ({ servicesManager, extensionManager }) => {
       const { toolbarService, toolGroupService } = servicesManager.services;
+
       const utilityModule = extensionManager.getModuleEntry(
         '@ohif/extension-cornerstone.utilityModule.tools'
       );
@@ -128,50 +120,63 @@ function modeFactory({ modeConfiguration }) {
         'Zoom',
         'WindowLevel',
         'Pan',
+        'Capture',
         'Layout',
+        'MPR',
+        'Crosshairs',
         'MoreTools',
       ]);
     },
     onModeExit: ({ servicesManager }) => {
-      const { toolGroupService, measurementService, toolbarService } = servicesManager.services;
+      const {
+        toolGroupService,
+        syncGroupService,
+        toolbarService,
+        segmentationService,
+        cornerstoneViewportService,
+      } = servicesManager.services;
 
       toolGroupService.destroy();
+      syncGroupService.destroy();
+      toolbarService.destroy();
+      segmentationService.destroy();
+      cornerstoneViewportService.destroy();
     },
+    /** */
     validationTags: {
       study: [],
       series: [],
     },
-    isValidMode: ({ modalities }) => {
-      const modalities_list = modalities.split('\\');
-
-      // Slide Microscopy modality not supported by basic mode yet
-      return !modalities_list.includes('SM');
-    },
+    /**
+     * A boolean return value that indicates whether the mode is valid for the
+     * modalities of the selected studies. For instance a PET/CT mode should be
+     */
+    isValidMode: ({ modalities }) => true,
+    /**
+     * Mode Routes are used to define the mode's behavior. A list of Mode Route
+     * that includes the mode's path and the layout to be used. The layout will
+     * include the components that are used in the layout. For instance, if the
+     * default layoutTemplate is used (id: '@ohif/extension-default.layoutTemplateModule.viewerLayout')
+     * it will include the leftPanels, rightPanels, and viewports. However, if
+     * you define another layoutTemplate that includes a Footer for instance,
+     * you should provide the Footer component here too. Note: We use Strings
+     * to reference the component's ID as they are registered in the internal
+     * ExtensionManager. The template for the string is:
+     * `${extensionId}.{moduleType}.${componentId}`.
+     */
     routes: [
       {
-        path: 'viewer-cs3d',
-        /*init: ({ servicesManager, extensionManager }) => {
-          //defaultViewerRouteInit
-        },*/
+        path: 'template',
         layoutTemplate: ({ location, servicesManager }) => {
           return {
             id: ohif.layout,
             props: {
-              // TODO: Should be optional, or required to pass empty array for slots?
-              leftPanels: [ohif.thumbnailList],
-              rightPanels: [ohif.measurements],
+              leftPanels: [ohif.leftPanel, 'sam-med.panelModule.TestPanel'],
+              rightPanels: [ohif.rightPanel],
               viewports: [
                 {
-                  namespace: cs3d.viewport,
+                  namespace: cornerstone.viewport,
                   displaySetsToDisplay: [ohif.sopClassHandler],
-                },
-                {
-                  namespace: dicomvideo.viewport,
-                  displaySetsToDisplay: [dicomvideo.sopClassHandler],
-                },
-                {
-                  namespace: dicompdf.viewport,
-                  displaySetsToDisplay: [dicompdf.sopClassHandler],
                 },
               ],
             },
@@ -179,14 +184,13 @@ function modeFactory({ modeConfiguration }) {
         },
       },
     ],
+    /** List of extensions that are used by the mode */
     extensions: extensionDependencies,
-    hangingProtocol: 'default',
-    sopClassHandlers: [
-      dicomvideo.sopClassHandler,
-      ohif.sopClassHandler,
-      dicompdf.sopClassHandler,
-      dicomsr.sopClassHandler,
-    ],
+    /** HangingProtocol used by the mode */
+    // hangingProtocol: [''],
+    /** SopClassHandlers used by the mode */
+    sopClassHandlers: [ohif.sopClassHandler],
+    /** hotkeys for mode */
     hotkeys: [...hotkeys.defaults.hotkeyBindings],
   };
 }

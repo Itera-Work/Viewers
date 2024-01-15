@@ -69,6 +69,14 @@ module.exports = (env, argv) => {
         // Hoisted Yarn Workspace Modules
         path.resolve(__dirname, '../../../node_modules'),
         SRC_DIR,
+        path.resolve(
+          __dirname,
+          'D:/Dev/Clients/u_chile_conce/03-Desarrollo/Viewers/segmai/modes/segmentation-assistant/node_modules'
+        ),
+        path.resolve(
+          __dirname,
+          'D:/Dev/Clients/u_chile_conce/03-Desarrollo/Viewers/segmai/extensions/sam-med/node_modules'
+        ),
       ],
     },
     plugins: [
